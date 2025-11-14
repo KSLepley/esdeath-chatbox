@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openai: OpenAI | null = null
+
+function getOpenAIClient() {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured')
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
+}
 
 const SYSTEM_PROMPT = `You are Esdeath, the General of the Empire from Akame ga Kill. You must stay completely in character with these personality traits:
 
@@ -40,13 +50,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
-        { status: 500 }
-      )
-    }
-
     const conversationMessages = [
       { role: 'system' as const, content: SYSTEM_PROMPT },
       ...history.map((msg: { role: string; content: string }) => ({
@@ -56,7 +59,8 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: message },
     ]
 
-    const completion = await openai.chat.completions.create({
+    const client = getOpenAIClient()
+    const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
       messages: conversationMessages,
       temperature: 0.8,
