@@ -234,7 +234,7 @@ export default function Home() {
                   <img src={userAvatar} alt={userName} className="message-avatar-image" />
                 ) : (
                   <img 
-                    src={EMOTION_IMAGES[message.emotion || currentEmotion] || EMOTION_IMAGES.neutral} 
+                    src={EMOTION_IMAGES[(message.emotion as Emotion) || currentEmotion] || EMOTION_IMAGES.neutral} 
                     alt="Esdeath" 
                     className="message-avatar-image" 
                   />
