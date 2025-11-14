@@ -142,19 +142,40 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `API error: ${response.status}`)
       }
 
       const data = await response.json()
+      
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      if (!data.response) {
+        throw new Error('No response from AI')
+      }
+
       const emotion = detectEmotion(data.response)
       setCurrentEmotion(emotion)
       localStorage.setItem('currentEmotion', emotion)
       setMessages(prev => [...prev, { role: 'esdeath', content: data.response, emotion }])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error)
+      const errorMessage = error.message || "Something went wrong"
+      
+      // Show a more helpful error message
+      let displayMessage = "Hmph. Something went wrong. Try again, if you're strong enough to handle it."
+      
+      if (errorMessage.includes('OPENAI_API_KEY')) {
+        displayMessage = "The API key is not configured. Please add OPENAI_API_KEY in Vercel settings."
+      } else if (errorMessage.includes('API error')) {
+        displayMessage = `Hmph. The server returned an error: ${errorMessage}. Check the console for details.`
+      }
+      
       setMessages(prev => [...prev, {
         role: 'esdeath',
-        content: "Hmph. Something went wrong. Try again, if you're strong enough to handle it."
+        content: displayMessage
       }])
     } finally {
       setIsLoading(false)
